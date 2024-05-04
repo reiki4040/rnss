@@ -15,35 +15,31 @@ var docStyle = lipgloss.NewStyle().Margin(1, 2)
 type item struct {
 	InstanceId string
 	Name       string
-	PrivateIP  string
-	PublicIP   string
+	Others     string
 }
 
 func (i item) Title() string {
 	return i.Name
 }
 func (i item) Description() string {
-	return fmt.Sprintf("%s\t%s\t%s", i.InstanceId, i.PrivateIP, i.PublicIP)
+	return fmt.Sprintf("%s\t%s", i.InstanceId, i.Others)
 }
 func (i item) FilterValue() string {
-	return fmt.Sprintf("%s\t%s\t%s\t%s", i.InstanceId, i.Name, i.PrivateIP, i.PublicIP)
+	return fmt.Sprintf("%s\t%s\t%s", i.Name, i.InstanceId, i.Others)
 }
 
 func NewSelectionCUI(ec2list []string, filter []rune) (*model, error) {
 	items := make([]list.Item, 0, len(ec2list))
 	for _, l := range ec2list {
-		splited := strings.SplitN(l, "\t", 4)
+		splited := strings.SplitN(l, "\t", 3)
 		item := item{}
 		switch len(splited) {
 		case 0:
 			continue
 		default:
 			fallthrough
-		case 4:
-			item.PublicIP = splited[3]
-			fallthrough
 		case 3:
-			item.PrivateIP = splited[2]
+			item.Others = splited[2]
 			fallthrough
 		case 2:
 			item.Name = splited[1]
