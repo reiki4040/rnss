@@ -1,0 +1,50 @@
+project_name: rnss
+env:
+  - GO111MODULE=on
+before:
+  hooks:
+    - go mod tidy
+builds:
+  - main: .
+    binary: rnss
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.revision={{.ShortCommit}}
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+archives:
+  - name_template: >-
+      {{ .ProjectName }}_
+      {{- .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else }}{{ .Arch }}{{ end }}
+    format_overrides:
+      - goos: windows
+        format: zip
+release:
+  prerelease: auto
+
+# https://goreleaser.com/customization/changelog/
+# disabled auto create changelog from commit message.
+changelog:
+  skip: true
+
+# homebrew
+brews:
+  - description: "instance selection helper for aws ssm start-session"
+    repository:
+      owner: reiki4040
+      name: homebrew-tap
+      token: "{{ .Env.GH_PAT }}"
+    homepage: "https://github.com/reiki4040/rnss"
+    install: |
+      bin.install "rnss"
+    caveats: |
+      # rnss required aws cli and session-manage-plugin in $PATH.
