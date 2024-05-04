@@ -1,0 +1,10 @@
+i-xxxxx0	Web Server 1	172.16.0.10 0.0.0.0
+i-xxxxx1	Web Server 2	172.16.0.11	0.0.0.0
+i-xxxxx2	Web Server 3	172.16.0.12	0.0.0.0
+i-xxxxx3	Web Server 4	172.16.0.12	0.0.0.0
+i-xxxxx4	elasticsearch cluster West	172.16.0.21	0.0.0.0
+i-xxxxx5	elasticsearch cluster East	172.16.0.22   0.0.0.0
+i-xxxxx6	RabbitMQ cluster West	172.16.0.30	0.0.0.0
+i-xxxxx7	RabbitMQ cluster East	172.16.0.31	0.0.0.0
+i-xxxxx8	日本語cluster East	172.16.0.40	0.0.0.0
+i-xxxxx9	😄cluster East	172.16.0.50	0.0.0.0
