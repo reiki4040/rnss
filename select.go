@@ -4,25 +4,66 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/muesli/termenv"
+
+	"github.com/charmbracelet/lipgloss"
 )
 
-func NewSelectionCUI(list []string, filter []rune) (*model, error) {
+var docStyle = lipgloss.NewStyle().Margin(1, 2)
+
+type item struct {
+	InstanceId string
+	Name       string
+	PrivateIP  string
+	PublicIP   string
+}
+
+func (i item) Title() string {
+	return i.Name
+}
+func (i item) Description() string {
+	return fmt.Sprintf("%s\t%s\t%s", i.InstanceId, i.PrivateIP, i.PublicIP)
+}
+func (i item) FilterValue() string {
+	return fmt.Sprintf("%s\t%s\t%s\t%s", i.InstanceId, i.Name, i.PrivateIP, i.PublicIP)
+}
+
+func NewSelectionCUI(ec2list []string, filter []rune) (*model, error) {
+	items := make([]list.Item, 0, len(ec2list))
+	for _, l := range ec2list {
+		splited := strings.SplitN(l, "\t", 4)
+		item := item{}
+		switch len(splited) {
+		case 0:
+			continue
+		default:
+			fallthrough
+		case 4:
+			item.PublicIP = splited[3]
+			fallthrough
+		case 3:
+			item.PrivateIP = splited[2]
+			fallthrough
+		case 2:
+			item.Name = splited[1]
+			fallthrough
+		case 1:
+			item.InstanceId = splited[0]
+		}
+		items = append(items, item)
+	}
+
 	return &model{
-		cursor:       0,
-		filter:       filter,
-		filteredList: []string{},
-		list:         list,
+		list: list.New(items, list.NewDefaultDelegate(), 0, 0),
 	}, nil
 }
 
 type model struct {
-	cursor       int
-	filter       []rune
-	filteredList []string
+	list list.Model
 
-	list []string
+	selectedItem item
+	selected     bool
 }
 
 func (m model) Init() tea.Cmd {
@@ -33,74 +74,27 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "ctrl+c":
-			m.cursor = -1
-			return m, tea.Quit
-		case "up":
-			m.cursor -= 1
-			if m.cursor < 0 {
-				m.cursor = len(m.filteredList) - 1
-			}
-		case "down":
-			m.cursor += 1
-			if m.cursor >= len(m.filteredList) {
-				m.cursor = 0
-			}
-		case "backspace":
-			if len(m.filter) > 0 {
-				m.filter = m.filter[:len(m.filter)-1]
-			}
+		// default cursor, filter paging implemented in bubble/list
 		case "enter":
-			if len(m.filteredList) > 0 {
-				return m, tea.Quit
+			i, ok := m.list.SelectedItem().(item)
+			if ok {
+				m.selected = true
+				m.selectedItem = item(i)
 			}
-		default:
-			m.filter = append(m.filter, []rune(msg.String())...)
+
+			return m, tea.Quit
 		}
+	case tea.WindowSizeMsg:
+		h, v := docStyle.GetFrameSize()
+		m.list.SetSize(msg.Width-h, msg.Height-v)
 	}
 
-	// filter selection with filter ignore upper/lower
-	m.filteredList = nil
-	filter := strings.ToLower(string(m.filter))
-	for _, id := range m.list {
-		if strings.Contains(strings.ToLower(id), filter) {
-			m.filteredList = append(m.filteredList, id)
-		}
-	}
+	var cmd tea.Cmd
+	m.list, cmd = m.list.Update(msg)
 
-	return m, nil
+	return m, cmd
 }
 
 func (m model) View() string {
-	var sb strings.Builder
-
-	cursorColor := termenv.ColorProfile().Color("#00FFFF")
-	cursorLineBackgroundColor := termenv.ColorProfile().Color("#333333")
-	cursorLineCharColor := termenv.ColorProfile().Color("#FF00FF")
-	filterMatchCharColor := termenv.ColorProfile().Color("#FFD700")
-
-	// show list
-	for i, selection := range m.filteredList {
-		cursor := " "
-		if i == m.cursor {
-			cursor = "> "
-			sb.WriteString(termenv.String(cursor).Foreground(cursorColor).String())
-			sb.WriteString(termenv.String(selection).Background(cursorLineBackgroundColor).Foreground(cursorLineCharColor).String())
-		} else {
-			sb.WriteString(" ")
-			// show selection with highlight if matched filter
-			filtered := string(m.filter)
-			if len(filtered) > len(selection) {
-				filtered = filtered[:len(selection)]
-			}
-			sb.WriteString(strings.ReplaceAll(selection, filtered, termenv.String(filtered).Foreground(filterMatchCharColor).String()))
-
-		}
-		sb.WriteString("\n")
-	}
-
-	// show filter input prompt
-	sb.WriteString(fmt.Sprintf("\nFilter: %s", string(m.filter)))
-
-	return sb.String()
+	return docStyle.Render(m.list.View())
 }

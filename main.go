@@ -150,9 +150,12 @@ func main() {
 		fmt.Printf("failed initialise selection CUI: %v", err)
 		os.Exit(1)
 	}
+	cui.list.Title = "select start-session instance"
 
 	// start selection CUI by Bubble Tea
-	p := tea.NewProgram(cui)
+	p := tea.NewProgram(cui,
+		tea.WithAltScreen(),
+	)
 	m, err := p.Run()
 	if err != nil {
 		fmt.Println("Error running program:", err)
@@ -162,10 +165,8 @@ func main() {
 	selectedInstanceId := ""
 	retm, ok := m.(model)
 	if ok {
-		if retm.cursor >= 0 {
-			item := retm.filteredList[retm.cursor]
-			splited := strings.Split(item, "\t")
-			selectedInstanceId = splited[0]
+		if retm.selected {
+			selectedInstanceId = retm.selectedItem.InstanceId
 		} else {
 			// canceled
 			fmt.Println("none selected instance ID.")
