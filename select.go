@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/list"
@@ -29,7 +30,7 @@ func (i item) FilterValue() string {
 }
 
 func NewSelectionCUI(ec2list []string, filter []rune) (*model, error) {
-	items := make([]list.Item, 0, len(ec2list))
+	items := make([]item, 0, len(ec2list))
 	for _, l := range ec2list {
 		splited := strings.SplitN(l, "\t", 3)
 		item := item{}
@@ -50,8 +51,18 @@ func NewSelectionCUI(ec2list []string, filter []rune) (*model, error) {
 		items = append(items, item)
 	}
 
+	sort.Slice(items, func(i, j int) bool {
+		result := strings.Compare(strings.ToLower(items[i].Name), strings.ToLower(items[j].Name))
+		return result < 0
+	})
+
+	teaItems := make([]list.Item, 0, len(items))
+	for _, it := range items {
+		teaItems = append(teaItems, it)
+	}
+
 	return &model{
-		list: list.New(items, list.NewDefaultDelegate(), 0, 0),
+		list: list.New(teaItems, list.NewDefaultDelegate(), 0, 0),
 	}, nil
 }
 
