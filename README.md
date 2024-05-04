@@ -31,4 +31,17 @@ rnss [options] <filter phrase>
 
 show instances and select then start-session to the instance.
 
+## run example
+
+local run example that using `-stdin` and `-show-command`.
+
+```
+cat example_ec2list.txt | rnss -stdin -show-command
+```
+
+- `-stdin`: ec2 list from stdin. this example example_ec2list.txt from pipe.
+- `-show-command`: only show command, NOT run start session. it likes dry-run.
+
+show instance list and select any(press Enter) show `aws ssm start-session --target <your selected InstanceId>
+
 
