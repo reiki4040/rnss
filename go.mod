@@ -42,3 +42,5 @@ require (
 	golang.org/x/term v0.19.0 // indirect
 	golang.org/x/text v0.3.8 // indirect
 )
+
+replace github.com/charmbracelet/bubbles => github.com/fkhadra/bubbles v0.0.1

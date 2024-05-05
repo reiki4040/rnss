@@ -61,20 +61,33 @@ func NewSelectionCUI(ec2list []string, filter []rune) (*model, error) {
 		teaItems = append(teaItems, it)
 	}
 
+	useInitialFilter := false
+	l := list.New(teaItems, list.NewDefaultDelegate(), 0, 0)
+	if len(filter) > 0 {
+		l.SetFilterValue(string(filter))
+		useInitialFilter = true
+	}
+
 	return &model{
-		list: list.New(teaItems, list.NewDefaultDelegate(), 0, 0),
+		list:             l,
+		useInitialFilter: useInitialFilter,
 	}, nil
 }
 
 type model struct {
 	list list.Model
 
-	selectedItem item
-	selected     bool
+	useInitialFilter bool
+	selectedItem     item
+	selected         bool
 }
 
 func (m model) Init() tea.Cmd {
-	return nil
+	if m.useInitialFilter {
+		return list.EnableLiveFiltering
+	} else {
+		return nil
+	}
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
