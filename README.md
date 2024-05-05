@@ -19,7 +19,7 @@ brew install reiki4040/tap/rnss
 
 ### other required
 
-installed `aws cli` and `session-manage-plugin`. 
+installed `aws cli` and `session-manager-plugin`. 
 - [aws cli](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
 - [session-manager-plugin](https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-install-plugin.html)
 
@@ -61,6 +61,6 @@ cat example_ec2list.txt | rnss -stdin -show-command web server
 - `-stdin`: ec2 list from stdin. this example example_ec2list.txt from pipe.
 - `-show-command`: only show command, NOT run start session. it likes dry-run.
 
-show instance list and select any(press Enter) show `aws ssm start-session --target <your selected InstanceId>
+show instance list and select any(press Enter) show `aws ssm start-session --target <your selected InstanceId>`
 
 
