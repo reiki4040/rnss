@@ -12,7 +12,7 @@ aws ssm start-session --target <you selected instance-id>
 
 ## install
 
-homebrew (NOT YET)
+homebrew
 ```
 brew install reiki4040/tap/rnss
 ```
