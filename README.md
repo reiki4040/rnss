@@ -17,6 +17,18 @@ homebrew
 brew install reiki4040/tap/rnss
 ```
 
+*if you get like below message, then run `brew update`*
+
+```
+Warning: No available formula or cask with the name "reiki4040/tap/rnss". Did you mean reiki4040/tap/rnssh, reiki4040/tap/rnsd or reiki4040/tap/rnzoo?
+```
+
+this is typo suggest from local stored tap info that not included rnss.
+
+```
+brew update
+```
+
 ### other required
 
 installed `aws cli` and `session-manager-plugin`. 
