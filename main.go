@@ -89,13 +89,9 @@ func main() {
 			ec2list = append(ec2list, l)
 		}
 	} else {
-		region := os.Getenv(EnvAWSRgion)
+		region := ""
 		if optRegion != "" {
 			region = optRegion
-		}
-		if len(region) == 0 {
-			fmt.Println("required region set -region or env AWS_REGION")
-			os.Exit(1)
 		}
 
 		ctx := context.Background()
