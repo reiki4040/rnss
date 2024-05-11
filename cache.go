@@ -14,12 +14,12 @@ const (
 	CacheDir = "cache"
 )
 
-func NewEC2Cache(region string) (*EC2Cache, error) {
+func NewEC2Cache(region, profile string) (*EC2Cache, error) {
 	u, err := user.Current()
 	if err != nil {
 		return nil, err
 	}
-	fName, err := GetCacheFileName(region)
+	fName, err := GetCacheFileName(region, profile)
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +89,12 @@ func (c *EC2Cache) Store(list []string) error {
 	return nil
 }
 
-func GetCacheFileName(region string) (string, error) {
+func GetCacheFileName(region, profile string) (string, error) {
 	// ap-notheast-1_ec2list.tsv
-	return strings.Join([]string{region, "ec2list.tsv"}, "_"), nil
+	p := "default"
+	if profile != "" {
+		p = profile
+	}
+
+	return strings.Join([]string{region, p, "ec2list.tsv"}, "_"), nil
 }
