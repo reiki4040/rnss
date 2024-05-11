@@ -4,13 +4,16 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials/stscreds"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
+	"github.com/aws/aws-sdk-go-v2/service/sts"
 )
 
-func GetEC2ListForStartSession(ctx context.Context, region string) ([]string, error) {
-	instances, err := GetInstances(ctx, region)
+func GetEC2ListForStartSession(ctx context.Context, cfg aws.Config) ([]string, error) {
+	instances, err := GetInstances(ctx, cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -40,11 +43,41 @@ func GetEC2ListForStartSession(ctx context.Context, region string) ([]string, er
 	return list, nil
 }
 
-func GetInstances(ctx context.Context, region string) ([]*types.Instance, error) {
-	cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion(region))
+func LoadAWSConfig(ctx context.Context, region, profile string) (aws.Config, error) {
+	cfg, err := config.LoadDefaultConfig(ctx)
 	if err != nil {
-		return nil, err
+		return aws.Config{}, err
 	}
+
+	if profile != "" {
+		stsCli := sts.NewFromConfig(cfg)
+
+		awsConf, err := config.LoadSharedConfigProfile(ctx, profile)
+		if err != nil {
+			return aws.Config{}, err
+		}
+
+		provider := stscreds.NewAssumeRoleProvider(stsCli, awsConf.RoleARN, func(o *stscreds.AssumeRoleOptions) {
+			if awsConf.MFASerial != "" {
+				o.SerialNumber = aws.String(awsConf.MFASerial)
+				o.TokenProvider = stscreds.StdinTokenProvider
+			}
+		})
+		cfg.Credentials = provider
+
+		if awsConf.Region != "" {
+			cfg.Region = awsConf.Region
+		}
+	}
+
+	if region != "" {
+		cfg.Region = region
+	}
+
+	return cfg, nil
+}
+
+func GetInstances(ctx context.Context, cfg aws.Config) ([]*types.Instance, error) {
 	cli := ec2.NewFromConfig(cfg)
 
 	stateQueryName := "instance-state-name"
