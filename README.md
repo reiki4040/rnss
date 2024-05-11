@@ -43,23 +43,29 @@ show instances and select then start-session to the instance.
 rnss [-region AWS_REGION] [-f] [filter phrase...]
 ```
 
-set AWS region using `AWS_REGION` enviroment variable or `-region`
+set AWS region in `~/.aws/config` or using `AWS_REGION` enviroment variable or `-region`.
+
 
 ### basic usage
 
 show ec2 list (with cache if exists) and connect
 ```
-rnss -region ap-northeast-1
+rnss
 ```
 
 without cache (refresh cache, call ec2 describe instances and store local file). set `-f` if you changed EC2 state ex. launch instance, stop instance.
 ```
-rnss -region ap-northeast-1 -f
+rnss -f
 ```
 
 command args is filter phrase. filter `web server` in first list view by below.
 ```
-rnss -region ap-northeast-1 web server
+rnss web server
+```
+
+another region
+```
+rnss -region ap-northeast-1
 ```
 
 ## run example
