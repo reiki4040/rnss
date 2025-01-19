@@ -80,13 +80,6 @@ type model struct {
 
 func (m model) Init() tea.Cmd {
 	return nil
-	/*
-		if m.useInitialFilter {
-			return list.EnableLiveFiltering
-		} else {
-			return nil
-		}
-	*/
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
