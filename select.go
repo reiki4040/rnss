@@ -61,47 +61,39 @@ func NewSelectionCUI(ec2list []string, filter []rune) (*model, error) {
 		teaItems = append(teaItems, it)
 	}
 
-	useInitialFilter := false
 	l := list.New(teaItems, list.NewDefaultDelegate(), 0, 0)
 	if len(filter) > 0 {
-		l.SetFilterValue(string(filter))
-		useInitialFilter = true
+		l.SetFilterText(string(filter))
 	}
 
 	return &model{
-		list:             l,
-		useInitialFilter: useInitialFilter,
+		list: l,
 	}, nil
 }
 
 type model struct {
 	list list.Model
 
-	useInitialFilter bool
-	selectedItem     item
-	selected         bool
+	selectedItem item
+	selected     bool
 }
 
 func (m model) Init() tea.Cmd {
-	if m.useInitialFilter {
-		return list.EnableLiveFiltering
-	} else {
-		return nil
-	}
+	return nil
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		// default cursor, filter paging implemented in bubble/list
+		case "ctrl+c":
+			return m, tea.Quit
 		case "enter":
 			i, ok := m.list.SelectedItem().(item)
 			if ok {
 				m.selected = true
 				m.selectedItem = item(i)
 			}
-
 			return m, tea.Quit
 		}
 	case tea.WindowSizeMsg:
