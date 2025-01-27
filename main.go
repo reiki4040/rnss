@@ -180,12 +180,20 @@ func main() {
 		os.Exit(1)
 	}
 
-	awsCmdArgs := []string{
+	awsCmdArgs := make([]string, 0)
+	if optProfile != "" {
+		awsCmdArgs = append(awsCmdArgs, []string{
+			"--profile",
+			optProfile,
+		}...)
+	}
+	awsCmdArgs = append(awsCmdArgs, []string{
 		"ssm",
 		"start-session",
 		"--target",
 		selectedInstanceId,
-	}
+	}...)
+
 	if optShowCommand {
 		fmt.Println("aws", strings.Join(awsCmdArgs, " "))
 		return
