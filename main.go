@@ -10,6 +10,7 @@ import (
 	"os/signal"
 	"strings"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -24,6 +25,7 @@ var (
 	optUsage         bool
 	optFlushCache    bool
 	optRegion        string
+	optProfile       string
 	optShowCommand   bool
 	optListFromStdin bool
 )
@@ -33,6 +35,8 @@ func init() {
 	flag.BoolVar(&optUsage, "help", false, "show usage")
 	flag.BoolVar(&optFlushCache, "f", false, "flush ec2 list cache. set this if you change state EC2.")
 	flag.StringVar(&optRegion, "region", "", "target aws region.")
+	flag.StringVar(&optProfile, "p", "", "target profile.")
+	flag.StringVar(&optProfile, "profile", "", "target profile.")
 	flag.BoolVar(&optShowCommand, "show-command", false, "show aws ssm start-session command, NOT run it.")
 	flag.BoolVar(&optListFromStdin, "stdin", false, "instance list from stdin. required line starts with `instance-id<tab>`")
 	flag.Parse()
@@ -89,14 +93,17 @@ func main() {
 			ec2list = append(ec2list, l)
 		}
 	} else {
-		region := ""
-		if optRegion != "" {
-			region = optRegion
-		}
-
 		ctx := context.Background()
+		awsCfg, err := LoadAWSConfig(ctx, optRegion, optProfile)
+		if err != nil {
+			fmt.Printf("cannot resolved region: %v", err)
+			os.Exit(1)
+		}
+		// for cache only case
+		resolvedRegion := awsCfg.Region
+
 		if optFlushCache {
-			ec2list, err = getEC2InfoAndStoreCache(ctx, region)
+			ec2list, err = getEC2ListAndStoreCache(ctx, awsCfg, optProfile)
 			if err != nil {
 				fmt.Printf("failed get ec2 info: %v\n", err)
 				os.Exit(1)
@@ -104,10 +111,10 @@ func main() {
 		} else {
 			// read from cache. call aws if failed cache reading.
 			var cacheList []string
-			c, err := NewEC2Cache(region)
+			c, err := NewEC2Cache(resolvedRegion, optProfile)
 			if err != nil {
 				fmt.Printf("failed get ec2 info from cache: %v\n", err)
-				cacheList, err = getEC2InfoAndStoreCache(ctx, region)
+				cacheList, err = getEC2ListAndStoreCache(ctx, awsCfg, optProfile)
 				if err != nil {
 					fmt.Printf("failed get ec2 info: %v\n", err)
 					os.Exit(1)
@@ -118,7 +125,7 @@ func main() {
 					if err != nil && !os.IsNotExist(err) {
 						fmt.Printf("failed get ec2 info from cache: %v\n", err)
 					}
-					cacheList, err = getEC2InfoAndStoreCache(ctx, region)
+					cacheList, err = getEC2ListAndStoreCache(ctx, awsCfg, optProfile)
 					if err != nil {
 						fmt.Printf("failed get ec2 info: %v\n", err)
 						os.Exit(1)
@@ -173,12 +180,20 @@ func main() {
 		os.Exit(1)
 	}
 
-	awsCmdArgs := []string{
+	awsCmdArgs := make([]string, 0)
+	if optProfile != "" {
+		awsCmdArgs = append(awsCmdArgs, []string{
+			"--profile",
+			optProfile,
+		}...)
+	}
+	awsCmdArgs = append(awsCmdArgs, []string{
 		"ssm",
 		"start-session",
 		"--target",
 		selectedInstanceId,
-	}
+	}...)
+
 	if optShowCommand {
 		fmt.Println("aws", strings.Join(awsCmdArgs, " "))
 		return
@@ -205,15 +220,14 @@ func isStdinEmpty() bool {
 	return (stat.Mode()&os.ModeCharDevice) != 0 || stat.Size() <= 0
 }
 
-func getEC2InfoAndStoreCache(ctx context.Context, region string) ([]string, error) {
-	ec2list, err := GetEC2ListForStartSession(ctx, region)
+func getEC2ListAndStoreCache(ctx context.Context, cfg aws.Config, profile string) ([]string, error) {
+	ec2list, err := GetEC2ListForStartSession(ctx, cfg)
 	if err != nil {
-		fmt.Printf("failed get ec2 info: %v\n", err)
-		os.Exit(1)
+		return nil, err
 	}
 
 	// store cache
-	c, err := NewEC2Cache(region)
+	c, err := NewEC2Cache(cfg.Region, profile)
 	if err != nil {
 		fmt.Printf("failed store ec2 info: %v, however still selection...\n", err)
 	} else {
@@ -222,5 +236,6 @@ func getEC2InfoAndStoreCache(ctx context.Context, region string) ([]string, erro
 			fmt.Printf("failed store ec2 info: %v, however still selection...\n", err)
 		}
 	}
+
 	return ec2list, nil
 }
